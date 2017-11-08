@@ -1,0 +1,41 @@
+<script src="https://cdn.socket.io/socket.io-1.4.5.js"></script>
+<canvas id="ctx" width="500" height="500" style="border:1px solid #000000;"></canvas>
+
+<script>
+    let ctx = document.getElementById('ctx')
+              .getContext('2d');
+
+    ctx.font = '30px Arial';
+
+    let  socket = io();
+    socket.on('setPosition',function(data){
+       ctx.clearRect(0,0,500,500);
+       for(let i = 0 ; i < data.length ; i ++){
+       ctx.fillText('A',data[i].x,data[i].y);
+        }
+
+    });
+    document.onkeydown = function(event){
+        if(event.keyCode === 39)    //right
+            socket.emit('keyPress',{inputId:'right',state:true});
+        else if(event.keyCode === 40)   //down
+            socket.emit('keyPress',{inputId:'down',state:true});
+        else if(event.keyCode === 37) //left
+            socket.emit('keyPress',{inputId:'left',state:true});
+        else if(event.keyCode === 32) // space
+            socket.emit('keyPress',{inputId:'jump',state:true});
+    }
+    document.onkeyup = function(event){
+        if(event.keyCode === 39)    //right
+            socket.emit('keyPress',{inputId:'right',state:false});
+        else if(event.keyCode === 40)   //down
+            socket.emit('keyPress',{inputId:'down',state:false});
+        else if(event.keyCode === 37) //left
+            socket.emit('keyPress',{inputId:'left',state:false});
+        else if(event.keyCode === 32) // jump
+            socket.emit('keyPress',{inputId:'jump',state:false});
+        else if(event.keyCode === 78) //N swrd
+            socket.emit('keyPress',{inputId:'jump',state:false});
+    }
+
+</script>
