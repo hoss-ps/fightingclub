@@ -2,19 +2,262 @@
 <canvas id="ctx" width="500" height="500" style="border:1px solid #000000;"></canvas>
 
 <script>
-    let ctx = document.getElementById('ctx')
-              .getContext('2d');
+   // let ctx = document.getElementById('ctx')
+      //        .getContext('2d');
 
-    ctx.font = '30px Arial';
+
+
+    class Frame {
+        constructor(){
+            this.loopCounter = 0;
+            this.idleFrames = 5;
+            this.walkFrames = 14;
+            this.jumpFrames = 10;
+            this.kickFrames = 10;
+            this.punchFrames = 10;
+            this.freeze = false ;
+        }
+
+    }
+    class Source extends Frame {
+        constructor(characterType){
+            super();
+            this.idleImages = [];
+            this.walkImages = [];
+            this.jumpImages = [];
+            this.punchImages = [];
+            this.kickImages = [];
+            //this.mapNumber = Math.floor(Math.random() * 6) + 1;
+            this.mapImage = '/fightingclub/img/map/';
+            for (let counter = 0 ; counter < this.idleFrames ; counter++ ){
+                this.idleImages.push('/fightingclub/img/'+characterType+'/idle'+(counter)+'.png');
+            }
+            for (let counter = 0 ; counter < this.walkFrames ; counter++ ){
+                this.walkImages.push('/fightingclub/img/'+characterType+'/walk'+(counter)+'.png');
+            }
+            for (let counter = 0 ; counter < this.jumpFrames ; counter++ ){
+                this.jumpImages.push('/fightingclub/img/'+characterType+'/jump'+(counter)+'.png');
+            }
+            for (let counter = 0 ; counter < this.punchFrames ; counter++ ){
+                this.punchImages.push('/fightingclub/img/'+characterType+'/punch'+(counter)+'.png');
+            }
+            for (let counter = 0 ; counter < this.kickFrames ; counter++ ){
+                this.kickImages.push('/fightingclub/img/'+characterType+'/kick'+(counter)+'.png');
+            }
+
+
+
+
+        }
+
+    }
+
+
+    class Character extends Frame {
+
+        constructor(characterType){
+            super();
+            this.images = {};
+            this.source = new Source(characterType);
+            this.idleCurrentFrame   = 0;
+            this.walkCurrentFrame   = 0;
+            this.jumpCurrentFrame   = 0;
+            this.punchCurrentFrame  = 0;
+            this.kickCurrentFrame   = 0;
+            this.init();
+
+        }
+        init(){
+
+            let images = {};
+
+            for(let src in this.source){
+                let loadedImages = 0;
+               if(Array.isArray(this.source[src])){
+                images[src] = [];
+                    for(let i = 0 ; i < this.source[src].length ; i++){
+                    images[src][i] = new Image();
+                    images[src][i].src =  this.source[src][i];
+                    images[src][i].onload = function() {
+      ///                   console.log( src + i + " loaded....");
+                    };
+
+                }
+
+                }
+
+            }
+
+            this.images = images;
+
+        }
+
+        idle(){
+            this.walkCurrentFrame   = 0;
+            this.jumpCurrentFrame   = 0;
+            this.loopCounter++;
+            if(this.loopCounter < 2 ){
+                if (this.idleCurrentFrame >= 0 && this.idleCurrentFrame >= this.idleFrames){
+                    this.idleCurrentFrame = 0 ;
+                }
+                this.idleCurrentFrame++;
+
+            }else{
+                this.loopCounter = 0 ;
+            }
+           // return this.source.idleImages[ this.idleCurrentFrame -1];
+            return this.images.idleImages[ this.idleCurrentFrame -1];
+        }
+
+        walk(){
+            if (this.walkCurrentFrame >= 0 && this.walkCurrentFrame >= this.walkFrames){
+                this.walkCurrentFrame = 0 ;
+            }
+            this.walkCurrentFrame++;
+            return this.images.walkImages[ this.walkCurrentFrame -1];
+        }
+
+        jump(){
+            if (this.jumpCurrentFrame >= 0 && this.jumpCurrentFrame >= this.jumpFrames){
+                this.jumpCurrentFrame = 0 ;
+            }
+            this.jumpCurrentFrame++;
+            return this.images.jumpImages[ this.jumpCurrentFrame -1];
+        }
+        punch(){
+            if (this.punchCurrentFrame >= 0 && this.punchCurrentFrame >= this.punchFrames){
+                this.freeze = false;
+                this.punchCurrentFrame = 0 ;
+            }else{
+                this.freeze = 'punch';
+            }
+            this.punchCurrentFrame++;
+            return this.images.punchImages[ this.punchCurrentFrame -1];
+        }
+        kick(){
+            if (this.kickCurrentFrame >= 0 && this.kickCurrentFrame >= this.kickFrames){
+                this.freeze = false;
+                this.kickCurrentFrame = 0 ;
+
+            }else{
+                this.freeze = 'kick';
+            }
+
+            this.kickCurrentFrame++;
+            return this.images.kickImages[ this.kickCurrentFrame -1];
+        }
+    }
+
+
+    class Render  {
+        constructor(ctx,characterOne,characterTwo) {
+           this.charOne = new Character(characterOne);
+           this.charTwo = new Character(characterTwo);
+            this.ctx = document.getElementById(ctx)
+              .getContext('2d');
+              this.clear();
+            }
+        draw(characterPosition,characteractionimage,face,left,top,width,height,freeze = false){
+            this._face       = face;
+            this._top        = top;
+            this._left       = left;
+            this._width      = width;
+            this._height     = height;
+            let _charImage =  '' ;
+            let _thisCaracter = {};
+            if(characterPosition=='L'){
+                _thisCaracter = this.charOne ;
+            }else if (characterPosition == 'R'){
+                _thisCaracter = this.charTwo ;
+            }
+
+            this.checkface();
+
+           //  this.ctx.drawImage( this.img1.src, this._left ,this._top, this._width, this._height);
+           if(!_thisCaracter.freeze && characteractionimage =='stand' ){
+            _charImage = 'idle';
+           }
+           else if ((!_thisCaracter.freeze && characteractionimage == 'punch'  )|| (_thisCaracter.freeze == 'punch' )){
+            _charImage = 'punch';
+           }
+           else if ((!_thisCaracter.freeze && characteractionimage == 'kick'  )|| (_thisCaracter.freeze == 'kick' )){
+            _charImage = 'kick';
+           }else{
+            _charImage =  characteractionimage ;
+           }
+             this.ctx.drawImage(_thisCaracter[_charImage](), this._left ,this._top, 39, 65);
+             this.ctx.restore(); //for skip of blinking
+            }
+        clear(){
+
+            this.ctx.clearRect(0,0,500,500);
+            this.ctx.save(); //for skip of blinking
+        }
+
+
+        checkface(){
+
+            if (this._face == 'L'){
+                this.ctx.scale(1,1);
+                if(this._left < 0 ) { //check kon
+                    this._left = Math.abs(this._left);
+                }
+            }else if(this._face == 'R'){
+
+
+              // this.ctx.translate(-1,0);
+                this.ctx.scale(-1,1);
+                this._left = -this._left;
+            }
+        }
+
+
+
+
+    }
+
+
+    let render = new Render ('ctx','shingo','joe');
+
 
     let  socket = io();
     socket.on('setPosition',function(data){
-       ctx.clearRect(0,0,500,500);
-       for(let i = 0 ; i < data.length ; i ++){
-       ctx.fillText('A',data[i].x,data[i].y);
+        render.clear();
+        for(let i = 0 ; i < data.length ; i ++){
+
+       //TODO:make witdth and height as var
+            //standPosition is left and right position of players
+      // console.log(data);
+            if(data[i].event == 'jump'){
+                render.draw(data[i].standPosition,'jump',data[i].face, data[i].x, data[i].y, 39, 65);
+            }
+            else if(data[i].event == 'walk'){
+                render.draw(data[i].standPosition,'walk',data[i].face, data[i].x, data[i].y, 39, 65);
+            }
+            else if(data[i].event == 'stand'){
+                render.draw(data[i].standPosition,'stand',data[i].face, data[i].x, data[i].y, 39, 65);
+            }
+            else if(data[i].event == 'punch'){
+                render.draw(data[i].standPosition,'punch',data[i].face, data[i].x, data[i].y, 39, 65);
+            }
+            else if(data[i].standPosition,data[i].event == 'kick'){
+                render.draw(data[i].standPosition,'kick',data[i].face, data[i].x, data[i].y, 39, 65);
+            }
+
+
+
+
         }
 
+
     });
+
+
+
+
+
+
+
     document.onkeydown = function(event){
         if(event.keyCode === 39)    //right
             socket.emit('keyPress',{inputId:'right',state:true});
@@ -24,6 +267,10 @@
             socket.emit('keyPress',{inputId:'left',state:true});
         else if(event.keyCode === 32) // space
             socket.emit('keyPress',{inputId:'jump',state:true});
+        else if(event.keyCode === 78 || event.keyCode === 110 ) //N punch
+            socket.emit('keyPress',{inputId:'punch',state:true});
+        else if(event.keyCode === 77 || event.keyCode === 109 ) //M kick
+            socket.emit('keyPress',{inputId:'kick',state:true});
     }
     document.onkeyup = function(event){
         if(event.keyCode === 39)    //right
@@ -34,8 +281,14 @@
             socket.emit('keyPress',{inputId:'left',state:false});
         else if(event.keyCode === 32) // jump
             socket.emit('keyPress',{inputId:'jump',state:false});
-        else if(event.keyCode === 78) //N swrd
-            socket.emit('keyPress',{inputId:'jump',state:false});
-    }
+        else if(event.keyCode === 78 || event.keyCode === 110 ) //N punch
+            socket.emit('keyPress',{inputId:'punch',state:false});
+        else if(event.keyCode === 77 || event.keyCode === 109 ) //M kick
+            socket.emit('keyPress',{inputId:'kick',state:false});
+
+
+        }
+
+
 
 </script>
